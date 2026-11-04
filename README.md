@@ -18,6 +18,6 @@ npm.cmd test
 ```
 
 The build is written to `dist/`; the backend serves it in production.
-Keep credentials in `../server/.env`. The frontend currently needs no environment variables.
+Keep credentials in `../backend/.env`. The frontend currently needs no environment variables.
 
-See [folder structure](docs/STRUCTURE.md) and the [application workflow](../server/docs/WORKFLOW.md).
+See [folder structure](docs/STRUCTURE.md) and the [application workflow](../backend/docs/WORKFLOW.md).
