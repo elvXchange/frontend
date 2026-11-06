@@ -1,3 +1,4 @@
+import { assetUrl } from '../../demo/mode';
 import { HistoricalImport } from '../imports/imports-ui';
 import { OperationsForms, ResultCorrection } from './operations-ui';
 import { useEffect, useState } from 'react';
@@ -255,14 +256,14 @@ function ResultEditor({
               <a
                 key={file.id}
                 className="btn btn-light btn-sm"
-                href={`/api/files/${file.id}`}
+                href={assetUrl(`/api/files/${file.id}`)}
               >
                 Receipt: {file.name}
               </a>
             ))}
             <a
               className="btn btn-light btn-sm"
-              href={`/api/workflow/lots/${id}/pdf?kind=vehicle`}
+              href={assetUrl(`/api/workflow/lots/${id}/pdf?kind=vehicle`)}
               target="_blank"
               rel="noreferrer"
             >
@@ -270,14 +271,16 @@ function ResultEditor({
             </a>
             <a
               className="btn btn-light btn-sm"
-              href={`/api/workflow/lots/${id}/images.zip`}
+              href={assetUrl(`/api/workflow/lots/${id}/images.zip`)}
             >
               Download all images
             </a>
             {['APPROVED', 'UNPICKED'].includes(lot.result_status || '') && (
               <a
                 className="btn btn-success btn-sm"
-                href={`/api/workflow/lots/${id}/pdf?kind=winning-letter`}
+                href={assetUrl(
+                  `/api/workflow/lots/${id}/pdf?kind=winning-letter`,
+                )}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -288,7 +291,7 @@ function ResultEditor({
               <>
                 <a
                   className="btn btn-light btn-sm"
-                  href={`/api/workflow/lots/${id}/pdf?kind=quotation`}
+                  href={assetUrl(`/api/workflow/lots/${id}/pdf?kind=quotation`)}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -724,8 +727,12 @@ function ImageManager({ id, editable }: { id: string; editable: boolean }) {
           .filter((f) => f.kind === 'IMAGE')
           .map((f) => (
             <div key={f.id}>
-              <a href={`/api/files/${f.id}`} target="_blank" rel="noreferrer">
-                <img src={`/api/files/${f.id}`} alt={f.name} />
+              <a
+                href={assetUrl(`/api/files/${f.id}`)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <img src={assetUrl(`/api/files/${f.id}`)} alt={f.name} />
               </a>
               {editable && (
                 <div className="workflow-actions">
@@ -871,7 +878,10 @@ export function ReferenceImages({
           <button disabled={busy} className="btn btn-success">
             Start image import
           </button>
-          <a className="btn btn-light" href="/api/workflow/image-link-template">
+          <a
+            className="btn btn-light"
+            href={assetUrl('/api/workflow/image-link-template')}
+          >
             Download Image Link Template
           </a>
         </div>
@@ -894,7 +904,7 @@ export function ReferenceImages({
           </p>
           <a
             className="btn btn-light btn-sm"
-            href={`/api/workflow/image-jobs/${jobId}?download=1`}
+            href={assetUrl(`/api/workflow/image-jobs/${jobId}?download=1`)}
           >
             Download row results
           </a>
@@ -1146,13 +1156,17 @@ export function WorkflowHub({
             <div className="workflow-actions">
               <a
                 className="btn btn-success"
-                href={`/api/workflow/report?kind=acr${auction ? '&auction=' + auction : ''}`}
+                href={assetUrl(
+                  `/api/workflow/report?kind=acr${auction ? '&auction=' + auction : ''}`,
+                )}
               >
                 Download Insurance ACR
               </a>
               <a
                 className="btn btn-light"
-                href={`/api/workflow/report?kind=payment${auction ? '&auction=' + auction : ''}`}
+                href={assetUrl(
+                  `/api/workflow/report?kind=payment${auction ? '&auction=' + auction : ''}`,
+                )}
               >
                 Payment MIS export
               </a>
@@ -1706,7 +1720,7 @@ function BulkOperations({
         <div className="workflow-actions wide">
           <a
             className="btn btn-light"
-            href={`/api/workflow/bulk/${kind}/template`}
+            href={assetUrl(`/api/workflow/bulk/${kind}/template`)}
           >
             Download blank template
           </a>

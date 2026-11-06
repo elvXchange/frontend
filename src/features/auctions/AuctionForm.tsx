@@ -1,3 +1,4 @@
+import { assetUrl } from '../../demo/mode';
 import { BatchSchedule } from '../../features/imports/imports-ui';
 import {
   VehicleCommercial,
@@ -217,7 +218,7 @@ export function AuctionForm({
             </p>
             <a
               className="btn btn-outline-success btn-sm"
-              href="/api/inventory/template"
+              href={assetUrl('/api/inventory/template')}
               download
             >
               ↓ Download template

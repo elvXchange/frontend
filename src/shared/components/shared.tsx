@@ -1,3 +1,4 @@
+import { DEMO_MODE } from '../../demo/mode';
 import React, { useId, useEffect, useRef } from 'react';
 export type User = {
   id: string;
@@ -124,6 +125,10 @@ export async function api<T = unknown>(
   method = 'GET',
   body?: unknown,
 ): Promise<T> {
+  if (DEMO_MODE) {
+    const { demoApi } = await import('../../demo/data');
+    return demoApi<T>(path, method);
+  }
   const form = body instanceof FormData;
   const controller = new AbortController(),
     timeout = setTimeout(() => controller.abort(), 15000);

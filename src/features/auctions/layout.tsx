@@ -1,3 +1,4 @@
+import { assetUrl } from '../../demo/mode';
 import { useEffect, useState } from 'react';
 import {
   api,
@@ -204,7 +205,7 @@ export function EventActions({
           className="icon-action"
           title="Download Inventory"
           aria-label={`Download inventory for ${auction.title}`}
-          href={`/api/auctions/${auction.id}/inventory`}
+          href={assetUrl(`/api/auctions/${auction.id}/inventory`)}
         >
           ↓
         </a>
@@ -344,7 +345,7 @@ export function VehicleThumbnail({
     >
       {lot.image_id ? (
         <img
-          src={`/api/files/${lot.image_id}`}
+          src={assetUrl(`/api/files/${lot.image_id}`)}
           alt={`${lot.make} ${lot.model}`}
         />
       ) : (

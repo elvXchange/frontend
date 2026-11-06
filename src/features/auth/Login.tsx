@@ -1,3 +1,4 @@
+import { DEMO_MODE } from '../../demo/mode';
 import { BatchSchedule } from '../../features/imports/imports-ui';
 import {
   VehicleCommercial,
@@ -106,6 +107,7 @@ export function Login({ onLogin }: { onLogin: (user: User) => void }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [message, setMessage] = useState('');
+  const [demoRole, setDemoRole] = useState<User['role']>('ADMIN');
   const usernameRef = useRef<HTMLInputElement>(null);
   return (
     <div className="public-page">
@@ -121,6 +123,50 @@ export function Login({ onLogin }: { onLogin: (user: User) => void }) {
         <div className="public-login-row">
           <section className="content-card login-form-card">
             <h1>Sign in</h1>
+            {DEMO_MODE && (
+              <div className="alert alert-info">
+                <p>
+                  <strong>Client UI preview</strong>
+                  <br />
+                  Sample data only. Forms do not save changes. Sign out to
+                  explore another role.
+                </p>
+                <label htmlFor="demo-role">Explore as</label>
+                <select
+                  id="demo-role"
+                  className="form-select mb-2"
+                  value={demoRole}
+                  onChange={(e) => setDemoRole(e.target.value as User['role'])}
+                >
+                  {[
+                    'ADMIN',
+                    'BUYER',
+                    'AUCTION_MANAGER',
+                    'UPLOAD_QC',
+                    'INFO_QC',
+                    'ZONAL_MANAGER',
+                    'SELLER_ADMIN',
+                    'TELECALLER',
+                  ].map((role) => (
+                    <option key={role} value={role}>
+                      {role.replaceAll('_', ' ')}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={async () => {
+                    const { selectDemoUser } = await import('../../demo/data');
+                    if (!location.hash.startsWith('#/'))
+                      location.hash = '/events/live-auctions';
+                    onLogin(selectDemoUser(demoRole));
+                  }}
+                >
+                  Enter UI preview
+                </button>
+              </div>
+            )}
             <p>Welcome to ELVXCHANGE</p>
             {message && (
               <div className="alert alert-info" role="status">

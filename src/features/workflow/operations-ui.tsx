@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { assetUrl } from '../../demo/mode';
 import {
   api,
   paise,
@@ -354,7 +355,7 @@ export function VehicleCommercial({ lot }: { lot: Lot }) {
             className="workflow-link"
             target="_blank"
             rel="noreferrer"
-            href={valuation}
+            href={assetUrl(valuation)}
           >
             VALUATION
           </a>
@@ -364,7 +365,7 @@ export function VehicleCommercial({ lot }: { lot: Lot }) {
             className="workflow-link"
             target="_blank"
             rel="noreferrer"
-            href={fop}
+            href={assetUrl(fop)}
           >
             FOP / VIDEO
           </a>

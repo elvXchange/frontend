@@ -1,3 +1,4 @@
+import { assetUrl, DEMO_MODE } from '../demo/mode';
 import { BatchSchedule } from '../features/imports/imports-ui';
 import {
   VehicleCommercial,
@@ -206,16 +207,17 @@ export default function App() {
   }, []);
   useEffect(() => {
     void refresh();
-    const timer = refreshSeconds
-      ? setInterval(() => void refresh(), refreshSeconds * 1000)
-      : undefined;
+    const timer =
+      !DEMO_MODE && refreshSeconds
+        ? setInterval(() => void refresh(), refreshSeconds * 1000)
+        : undefined;
     return () => {
       clearInterval(timer);
       generation.current++;
     };
   }, [refresh, refreshSeconds]);
   useEffect(() => {
-    if (!user) return;
+    if (!user || DEMO_MODE) return;
     const socket = io({ withCredentials: true });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const onChange = () => {
@@ -717,6 +719,7 @@ export default function App() {
                     setUser(null);
                     setSelected(null);
                     setDetail(null);
+                    if (DEMO_MODE) location.hash = '/events/live-auctions';
                   }, '')
                 }
               >
@@ -742,9 +745,11 @@ export default function App() {
         </span>
         <span className={connected ? 'connection' : 'connection offline'}>
           <i />
-          {connected
-            ? 'Live updates connected'
-            : 'Reconnecting · use Refresh to check bids'}
+          {DEMO_MODE
+            ? 'UI preview - sample data, no changes saved'
+            : connected
+              ? 'Live updates connected'
+              : 'Reconnecting · use Refresh to check bids'}
         </span>
       </div>
       <main className="workspace">
@@ -1763,12 +1768,12 @@ export default function App() {
                   {isAdmin && section === 'users' && (
                     <a
                       className="btn btn-outline-success btn-sm"
-                      href={
+                      href={assetUrl(
                         '/api/users/export?status=' +
-                        userStatus +
-                        '&search=' +
-                        encodeURIComponent(query)
-                      }
+                          userStatus +
+                          '&search=' +
+                          encodeURIComponent(query),
+                      )}
                     >
                       ↓ Download Users
                     </a>
