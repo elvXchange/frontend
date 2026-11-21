@@ -36,9 +36,11 @@ export function PublicAuctions({
           <button
             key={s}
             className={tab === s ? 'active' : ''}
+            aria-pressed={tab === s}
             onClick={() => setTab(s)}
           >
             {s === 'LIVE' ? 'Live Auctions' : 'Upcoming Auctions'}
+            <span>{auctions.filter((a) => a.status === s).length}</span>
           </button>
         ))}
       </div>
@@ -47,7 +49,7 @@ export function PublicAuctions({
       </div>
       {error && <p className="alert alert-warning">{error}</p>}
       <div className="table-responsive">
-        <table className="table">
+        <table className="table auction-list-table">
           <thead>
             <tr>
               <th>Event / CUG</th>
@@ -61,15 +63,16 @@ export function PublicAuctions({
           <tbody>
             {rows.map((a) => (
               <tr key={a.id}>
-                <td>
+                <td data-label="Event / CUG">
                   <strong>{a.title}</strong>
                   <small>{a.insurer}</small>
+                  <span className="category-label">{a.category || '4W'}</span>
                 </td>
-                <td>{a.location}</td>
-                <td>{date(a.starts_at)}</td>
-                <td>{date(a.ends_at)}</td>
-                <td>{a.lot_count}</td>
-                <td>
+                <td data-label="Location">{a.location}</td>
+                <td data-label="Start">{date(a.starts_at)}</td>
+                <td data-label="Close">{date(a.ends_at)}</td>
+                <td data-label="Vehicles">{a.lot_count}</td>
+                <td data-label="Action">
                   <button
                     className="btn btn-outline-success btn-sm"
                     onClick={() => onEnter(a)}
@@ -154,31 +157,31 @@ export function EventActions({
     <>
       <div className="event-actions">
         {includeEnter && (
-          <button className="btn btn-outline-success btn-sm" onClick={onEnter}>
+          <button className="btn btn-success btn-sm" onClick={onEnter}>
             Enter
           </button>
         )}
         {auction.status === 'UPCOMING' && (
           <button
-            className="icon-action"
+            className="btn btn-sm btn-outline-secondary"
             title="Reschedule"
             aria-label={`Reschedule ${auction.title}`}
             disabled={busy}
             onClick={onEdit}
           >
-            ◷
+            Reschedule
           </button>
         )}
         {auction.status === 'LIVE' && (
           <>
             <button
-              className="icon-action"
+              className="btn btn-sm btn-outline-secondary"
               title="Extend Auction"
               aria-label={`Extend ${auction.title}`}
               disabled={busy}
               onClick={() => open('extend')}
             >
-              ↗
+              Extend
             </button>
             <button
               className="icon-action"
@@ -211,7 +214,7 @@ export function EventActions({
         {auction.status !== 'CLOSED' && (
           <>
             <button
-              className="icon-action"
+              className="icon-action danger"
               title="Block trained buyers"
               aria-label={`Block trained buyers for ${auction.title}`}
               disabled={busy}

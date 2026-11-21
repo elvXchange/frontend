@@ -2177,7 +2177,7 @@ dialog {
   background: var(--grid-alt);
 }
 .table > tbody > tr:hover > td {
-  background: #fff;
+  background: #f1f7f3;
 }
 .table small,
 .table .text-secondary {
@@ -2403,7 +2403,7 @@ dialog {
   border-color: var(--box-border);
 }
 
-@media (max-width: 1640px) {
+@media (max-width: 770px) {
   .auction-detail-card .vehicle-table {
     width: 100%;
     min-width: 0;
@@ -2472,5 +2472,336 @@ dialog {
   }
   .auction-list-card .table-responsive {
     border-radius: 0;
+  }
+}
+
+/* Reference-style data grids retain ELVXCHANGE's green palette. */
+.workspace {
+  max-width: 1760px;
+  margin-inline: auto;
+}
+.workspace .content-card.data-list-card {
+  border: 1px solid var(--grid-border);
+  border-radius: 12px;
+  background: var(--surface-bg);
+  box-shadow: 0 4px 18px #18352b08;
+  overflow: visible;
+}
+.data-list-card .list-filters {
+  padding: 20px 24px;
+  background: #f5f8f6;
+  border-radius: 12px 12px 0 0;
+  align-items: end;
+  gap: 16px;
+}
+.data-list-card .list-filters .field {
+  flex: 1;
+  min-width: 180px;
+  margin-bottom: 0;
+}
+.list-result-summary {
+  flex-shrink: 0;
+}
+.list-result-summary small {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: #52665a;
+  margin-top: 5px;
+}
+.data-list-card .table-toolbar,
+.data-list-card .toolbar-right {
+  flex-wrap: wrap;
+}
+.data-list-card .search-box {
+  width: clamp(240px, 28vw, 380px);
+}
+.data-list-card .table-responsive {
+  border-block: 1px solid var(--grid-border);
+}
+.data-list-card .table-footer {
+  background: #f5f8f6;
+  border-radius: 0 0 12px 12px;
+}
+.data-list-card .table > tbody > tr:nth-child(even):not(:hover) > td {
+  background: #f8faf9;
+}
+.category-label {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 9px;
+  border: 1px solid #c7dbce;
+  border-radius: 5px;
+  background: #edf6ef;
+  color: #215e39;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.tabs button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: -4px;
+}
+.user-list-table {
+  min-width: 1120px;
+}
+@media (max-width: 770px) {
+  .user-list-table {
+    min-width: 0;
+  }
+  .user-list-table thead {
+    display: none;
+  }
+  .user-list-table tbody,
+  .user-list-table tr {
+    display: block;
+  }
+  .user-list-table tr {
+    padding: 12px;
+    border-bottom: 1px solid var(--grid-border);
+  }
+  .user-list-table > tbody > tr > td {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 12px;
+    border: 0;
+    padding: 8px;
+    overflow-wrap: anywhere;
+  }
+  .user-list-table td::before {
+    content: attr(data-label);
+    color: #52665a;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .user-list-table td[data-label='User Name'] {
+    display: block;
+  }
+  .user-list-table td[data-label='User Name']::before {
+    display: none;
+  }
+}
+@media (max-width: 650px) {
+  .data-list-card .list-filters,
+  .data-list-card .table-toolbar {
+    padding: 16px;
+  }
+  .data-list-card .toolbar-right,
+  .data-list-card .search-box {
+    width: 100%;
+  }
+  .data-list-card .search-box {
+    order: -1;
+  }
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.reference-workspace {
+  max-width: none;
+  padding: 20px 24px 0;
+}
+.reference-workspace .page-heading {
+  margin-bottom: 16px;
+  gap: 12px;
+}
+.reference-workspace .page-heading h1 {
+  font-size: 22px;
+  margin: 0;
+  letter-spacing: 0;
+}
+.reference-workspace .page-heading .eyebrow,
+.reference-workspace .page-heading p {
+  display: none;
+}
+.reference-workspace .content-card.data-list-card {
+  border-radius: 0;
+  box-shadow: none;
+}
+.reference-workspace .entity-tabs {
+  padding: 0;
+  background: #f5f8f6;
+}
+.reference-workspace .entity-tabs .active {
+  padding: 10px 20px;
+  background: #edf6ef;
+  border: 1px solid var(--box-border);
+  border-bottom: 3px solid var(--green);
+}
+.reference-workspace .tabs {
+  padding: 0;
+  background: #f5f8f6;
+}
+.reference-workspace .tabs:empty {
+  display: none;
+}
+.reference-workspace .tabs button {
+  padding: 10px 16px;
+  font-size: 14px;
+  border-right: 1px solid var(--grid-border);
+  color: #405548;
+}
+.reference-workspace .tabs button.active {
+  background: #edf6ef;
+  color: #17673b;
+  border-bottom: 3px solid var(--green);
+}
+.operations-draft-note {
+  padding: 12px 16px;
+  border-left: 3px solid var(--green);
+  background: #edf6ef;
+  color: #375541;
+}
+.schedule-page,
+.operations-import-page,
+.operations-calling-page {
+  padding: 20px;
+}
+.schedule-page .upload-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.operations-file-summary {
+  display: flex;
+  gap: 20px;
+  padding: 16px 0;
+}
+.operations-assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 20px 0;
+}
+.operations-assignment-grid fieldset {
+  border: 1px solid var(--box-border);
+  padding: 16px;
+  min-width: 0;
+}
+.operations-assignment-grid legend {
+  float: none;
+  width: auto;
+  font-size: 14px;
+  font-weight: 600;
+}
+.operations-assignment-grid fieldset > div {
+  max-height: 340px;
+  overflow: auto;
+}
+.operations-assignment-grid label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .operations-assignment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.reference-workspace .list-filters {
+  padding: 12px 16px;
+  border-radius: 0;
+  gap: 12px;
+}
+.reference-workspace .table-toolbar {
+  padding: 10px 16px;
+  background: #edf3ef;
+  flex-wrap: wrap;
+}
+.reference-workspace .table-toolbar .toolbar-right {
+  margin-left: auto;
+}
+.reference-workspace .list-result-summary small {
+  display: none;
+}
+.reference-workspace .table > thead > tr > th {
+  padding: 10px 12px;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+  border-right: 1px solid #ffffff33;
+}
+.reference-workspace .table > tbody > tr > td {
+  padding: 10px 12px;
+  border-right: 1px solid var(--grid-border);
+  font-size: 14px;
+}
+.reference-workspace .table td:last-child {
+  border-right: 0;
+}
+.reference-workspace .table small {
+  font-size: 13px;
+  margin-top: 3px;
+}
+.reference-workspace .auction-title {
+  font-size: 14px;
+  color: #17673b;
+}
+.reference-workspace .btn-sm,
+.reference-workspace .icon-action {
+  border-radius: 4px;
+  padding: 5px 10px;
+  min-height: 32px;
+  font-size: 14px;
+}
+.reference-workspace .event-actions {
+  margin: 0;
+  gap: 5px;
+}
+.reference-workspace .table-footer {
+  border-radius: 0;
+  padding: 10px 16px;
+  background: #edf3ef;
+}
+.reference-workspace .auction-meta,
+.reference-workspace .staff-summary {
+  border-radius: 0;
+  margin-bottom: 12px;
+}
+.reference-workspace .staff-summary > div,
+.reference-workspace .staff-summary > button {
+  padding: 10px 12px;
+}
+.reference-workspace .staff-summary span {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.reference-workspace .staff-summary strong {
+  font-size: 16px;
+}
+.reference-workspace .empty-panel {
+  padding: 20px 16px;
+  text-align: left;
+}
+.reference-workspace .empty-panel .empty-icon {
+  display: none;
+}
+.reference-workspace .empty-panel h3 {
+  font-size: 16px;
+}
+.reference-workspace .detail-tools {
+  background: white;
+  margin-bottom: 8px;
+}
+.user-editor-modal .form-card,
+.schedule-modal .form-card,
+.vehicle-editor-modal .form-card {
+  border-radius: 3px;
+  padding: 16px;
+}
+@media (max-width: 770px) {
+  .reference-workspace {
+    padding: 16px 12px 0;
+  }
+  .reference-workspace .table > tbody > tr > td {
+    border-right: 0;
+  }
+  .reference-workspace .auction-list-table td,
+  .reference-workspace .user-list-table td {
+    padding: 8px;
   }
 }

@@ -1,6 +1,8 @@
 import { HistoricalImport } from '../imports/imports-ui';
 import { OperationsForms, ResultCorrection } from './operations-ui';
 import { useEffect, useState } from 'react';
+import { workflowSections } from './workflow-pages';
+export { workflowSections } from './workflow-pages';
 import {
   InventoryErrorReport,
   api,
@@ -68,23 +70,6 @@ type Limit = {
   available_vehicles: number;
 };
 const staff = (u: User) => u.role !== 'BUYER';
-export const workflowSections = (user: User) =>
-  staff(user)
-    ? [
-        'Results',
-        ...(user.role === 'ADMIN' || user.permissions?.includes('payments')
-          ? ['Payment MIS']
-          : []),
-        ...(user.role === 'ADMIN' || user.permissions?.includes('finance')
-          ? ['RSD & Limits']
-          : []),
-        'Reports',
-        ...(user.role === 'ADMIN' || user.permissions?.includes('bulk')
-          ? ['Bulk Operations']
-          : []),
-        ...(user.role === 'ADMIN' ? ['Insurers', 'Notifications'] : []),
-      ]
-    : ['Results', 'Payment MIS', 'RSD & Limits'];
 const textInput = (
   label: string,
   value: string,
@@ -552,24 +537,26 @@ function ResultEditor({
             <summary>
               Result and payment history ({data.history.length})
             </summary>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Action</th>
-                  <th>Operator</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.history.map((h) => (
-                  <tr key={h.id}>
-                    <td>{date(h.created_at)}</td>
-                    <td>{h.action}</td>
-                    <td>{h.actor}</td>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>Operator</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.history.map((h) => (
+                    <tr key={h.id}>
+                      <td>{date(h.created_at)}</td>
+                      <td>{h.action}</td>
+                      <td>{h.actor}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </details>
         </>
       )}
@@ -998,7 +985,7 @@ export function WorkflowHub({
     <>
       <div className="page-heading">
         <div>
-          <h1>{staff(user) ? 'Insurance Operations' : 'My Wins & Payments'}</h1>
+          <h1>{staff(user) ? tab : 'My Wins & Payments'}</h1>
           <p>
             Saved results, approvals, payment follow-up and insurance limits.
           </p>
@@ -1009,17 +996,18 @@ export function WorkflowHub({
       </div>
       <div className="content-card">
         {!staff(user) && (
-          <div className="tabs">
+          <nav className="tabs" aria-label="My wins and payments sections">
             {workflowSections(user).map((t) => (
               <button
                 className={tab === t ? 'active' : ''}
                 key={t}
+                aria-pressed={tab === t}
                 onClick={() => onTabChange(t)}
               >
                 {t}
               </button>
             ))}
-          </div>
+          </nav>
         )}
         {error && (
           <p className="alert alert-danger" role="alert">
@@ -1408,42 +1396,47 @@ function Notifications() {
         and email delivery have separate statuses.
       </p>
       {error && <p role="alert">{error}</p>}
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Recipient</th>
-            <th>Subject</th>
-            <th>Delivery</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.id}>
-              <td>{r.recipient}</td>
-              <td>{r.subject}</td>
-              <td>
-                {r.status}
-                <small>{r.last_error}</small>
-              </td>
-              <td>
-                {['FAILED', 'NOT_CONFIGURED'].includes(r.status) && (
-                  <button
-                    className="btn btn-light btn-sm"
-                    onClick={() => {
-                      void api(`/workflow/notifications/${r.id}/retry`, 'POST')
-                        .then(load)
-                        .catch((e) => setError(e.message));
-                    }}
-                  >
-                    Retry
-                  </button>
-                )}
-              </td>
+      <div className="table-responsive">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Recipient</th>
+              <th>Subject</th>
+              <th>Delivery</th>
+              <th>Action</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id}>
+                <td>{r.recipient}</td>
+                <td>{r.subject}</td>
+                <td>
+                  {r.status}
+                  <small>{r.last_error}</small>
+                </td>
+                <td>
+                  {['FAILED', 'NOT_CONFIGURED'].includes(r.status) && (
+                    <button
+                      className="btn btn-light btn-sm"
+                      onClick={() => {
+                        void api(
+                          `/workflow/notifications/${r.id}/retry`,
+                          'POST',
+                        )
+                          .then(load)
+                          .catch((e) => setError(e.message));
+                      }}
+                    >
+                      Retry
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <button className="btn btn-light" onClick={() => void load()}>
         Refresh delivery status
       </button>
@@ -1724,24 +1717,26 @@ function BulkOperations({
           {error}
         </p>
       )}
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Row</th>
-            <th>Result</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {result.map((r) => (
-            <tr key={r.row}>
-              <td>{r.row}</td>
-              <td>{r.ok ? 'Saved' : 'Error'}</td>
-              <td>{r.message}</td>
+      <div className="table-responsive">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Result</th>
+              <th>Details</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {result.map((r) => (
+              <tr key={r.row}>
+                <td>{r.row}</td>
+                <td>{r.ok ? 'Saved' : 'Error'}</td>
+                <td>{r.message}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <h3>Relive closed auction</h3>
       {auctions
         .filter((a) => a.status === 'CLOSED')

@@ -1,4 +1,3 @@
-import { BatchSchedule } from '../features/imports/imports-ui';
 import {
   VehicleCommercial,
   WorkflowCreditBanner,
@@ -12,17 +11,18 @@ import '@fontsource/montserrat/latin-600.css';
 import '@fontsource/montserrat/latin-700.css';
 import '@fontsource/montserrat/latin-800.css';
 import '../styles/style.css';
+import '../styles/theme.css';
+import '../styles/responsive.css';
 import {
   closedSearch,
   closedFields,
   archiveSince,
+  closedVehicleViews,
+  matchesVehicleView,
+  initialVehicleView,
 } from '../features/auctions/search';
-import {
-  WorkflowHub,
-  WorkflowLotButton,
-  ReferenceImages,
-  workflowSections,
-} from '../features/workflow/workflow';
+import { WorkflowLotButton } from '../features/workflow/workflow';
+import { buyerPagePath } from '../features/auctions/buyer-navigation';
 import {
   PublicAuctions,
   EventActions,
@@ -56,19 +56,28 @@ import {
   CategoryChecks,
   UserDetails,
   VehicleDetails,
-  BuyerLots,
   Registration,
   FilePanel,
   BlockList,
   Participants,
   AddVehicles,
-  BlockedPan,
-  LinkImages,
 } from '../features/users/core';
 
 import { Login } from '../features/auth/Login';
 import { UserForm } from '../features/users/UserForm';
 import { AuctionForm } from '../features/auctions/AuctionForm';
+import { OperationsPage } from '../features/workflow/OperationsPage';
+import {
+  operationsForUser,
+  operationPath,
+  operationFromPath,
+} from '../features/workflow/operation-pages';
+import {
+  userGroups,
+  matchesUserGroup,
+  userGroupPath,
+  userGroupFromPath,
+} from '../features/users/user-groups';
 export default function App() {
   const [operationAuction, setOperationAuction] = useState<Auction | null>(
       null,
@@ -108,7 +117,7 @@ export default function App() {
     [booting, setBooting] = useState(true);
   const [section, setSection] = useState('auctions'),
     [tab, setTab] = useState('LIVE'),
-    [workflowTab, setWorkflowTab] = useState('Results'),
+    [operationPage, setOperationPage] = useState('Schedule Auctions'),
     [users, setUsers] = useState<User[]>([]),
     [auctions, setAuctions] = useState<Auction[]>([]);
   const [selected, setSelected] = useState<string | null>(null),
@@ -131,7 +140,8 @@ export default function App() {
     generation = useRef(0),
     reviewedEntries = useRef(new Set<string>());
   const canManageEvents =
-    user?.role === 'ADMIN' || !!user?.permissions?.includes('events');
+    user?.role !== 'BUYER' &&
+    (user?.role === 'ADMIN' || !!user?.permissions?.includes('events'));
   const isAdmin = !!user && user.role !== 'BUYER',
     now = tick + offset;
   function clearSessionView() {
@@ -254,6 +264,10 @@ export default function App() {
   useEffect(() => {
     const read = () => {
       const path = location.hash.slice(1);
+      if (user?.role === 'BUYER' && buyerPagePath(path) !== path) {
+        location.replace('#' + buyerPagePath(path));
+        return;
+      }
       const match = path.match(
         /^\/events\/(live|upcoming|closed)-auction-details\/([a-f0-9-]+)$/i,
       );
@@ -264,24 +278,35 @@ export default function App() {
         setSection('auctions');
         setTab(match[1].toUpperCase());
         setLotView(
-          match[1] === 'live'
-            ? 'OPEN'
-            : match[1] === 'closed'
-              ? 'WITH_BIDS'
-              : 'ALL',
+          initialVehicleView(
+            match[1].toUpperCase(),
+            !!user && user.role !== 'BUYER',
+          ),
         );
         setSelected(match[2]);
         return;
       }
       setSelected(null);
-      if (path === '/events/link-images') setSection('images');
-      else if (path === '/profile') setSection('profile');
-      else if (path === '/users') setSection('users');
-      else if (path === '/workflow') setSection('workflow');
-      else if (path === '/batch-schedule') setSection('batch-schedule');
-      else if (path === '/events/watchlist') setSection('watchlist');
-      else if (path === '/events/my-results') setSection('results');
-      else {
+      if (operationFromPath(path)) {
+        setSection('operations');
+        setOperationPage(operationFromPath(path)!);
+      } else if (path === '/events/link-images') {
+        setSection('operations');
+        setOperationPage('Link Images');
+      } else if (path === '/profile') setSection('profile');
+      else if (userGroupFromPath(path)) {
+        setSection('users');
+        setUserStatus(userGroupFromPath(path)!);
+      } else if (
+        user?.role !== 'BUYER' &&
+        (path.startsWith('/workflow') || path === '/batch-schedule')
+      ) {
+        setSection('operations');
+        setOperationPage(
+          operationsForUser(user || { role: 'BUYER' })[0]?.[0] ||
+            'Schedule Auctions',
+        );
+      } else {
         setSection('auctions');
         setTab(
           path.includes('upcoming')
@@ -295,7 +320,7 @@ export default function App() {
     read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
-  }, []);
+  }, [user?.role, user?.permissions]);
   useEffect(
     () => setVehiclePage(1),
     [vehicleSearch, lotView, selected, pageSize],
@@ -315,21 +340,29 @@ export default function App() {
     }
   }
   function navigate(nextSection: string, nextTab = 'LIVE') {
+    if (
+      user?.role === 'BUYER' &&
+      !['auctions', 'profile'].includes(nextSection)
+    ) {
+      nextSection = 'auctions';
+      nextTab = 'LIVE';
+    }
     location.hash =
-      nextSection === 'images'
-        ? '/events/link-images'
-        : nextSection === 'auctions'
-          ? '/events/' + nextTab.toLowerCase() + '-auctions'
-          : nextSection === 'watchlist'
-            ? '/events/watchlist'
-            : nextSection === 'results'
-              ? '/events/my-results'
-              : '/' + nextSection;
+      nextSection === 'users'
+        ? userGroupPath(nextTab)
+        : nextSection === 'operations'
+          ? operationPath(nextTab)
+          : nextSection === 'auctions'
+            ? '/events/' + nextTab.toLowerCase() + '-auctions'
+            : '/' + nextSection;
     setMobileMenu(false);
     setInsurerFilter([]);
     setLocationFilter([]);
     setCategoryFilter([]);
     setSection(nextSection);
+    if (nextSection === 'operations') setOperationPage(nextTab);
+    if (nextSection === 'users')
+      setUserStatus(userGroupFromPath(userGroupPath(nextTab))!);
     setTab(nextTab);
     setSelected(null);
     setDetail(null);
@@ -446,9 +479,7 @@ export default function App() {
     const status = auctions.find((a) => a.id === id)?.status || 'LIVE';
     setSection('auctions');
     setTab(status);
-    setLotView(
-      status === 'LIVE' ? 'OPEN' : status === 'CLOSED' ? 'WITH_BIDS' : 'ALL',
-    );
+    setLotView(initialVehicleView(status, isAdmin));
     location.hash =
       '/events/' + status.toLowerCase() + '-auction-details/' + id;
     setDetail(null);
@@ -513,13 +544,7 @@ export default function App() {
   const filteredUsers = users
     .filter(
       (u) =>
-        (userStatus === 'ALL' ||
-          u.role === userStatus ||
-          u.status === userStatus ||
-          (userStatus === 'TRAINED' &&
-            u.role === 'BUYER' &&
-            u.status === 'ACTIVE') ||
-          (userStatus === 'UNVERIFIED' && u.status === 'PENDING')) &&
+        matchesUserGroup(u, userStatus) &&
         [u.name, u.username, u.email, u.phone]
           .join(' ')
           .toLowerCase()
@@ -528,19 +553,7 @@ export default function App() {
     .sort(compare);
   const visibleLots = (detail?.lots || []).filter(
     (l) =>
-      (lotView === 'ALL' ||
-        (['APPROVED', 'PENDING', 'REJECTED', 'UNSOLD', 'UNPICKED'].includes(
-          lotView,
-        ) &&
-          l.result_status === lotView) ||
-        (lotView === 'OPEN' && l.status === 'OPEN') ||
-        (lotView === 'CANCELLED' && l.status === 'CANCELLED') ||
-        (lotView === 'WITH_BIDS' &&
-          l.status === 'CLOSED' &&
-          (isAdmin ? l.bid_count : l.own_bid_count) > 0) ||
-        (lotView === 'WITHOUT_BIDS' &&
-          l.status === 'CLOSED' &&
-          (isAdmin ? l.bid_count : l.own_bid_count) === 0)) &&
+      matchesVehicleView(l, lotView, isAdmin) &&
       [
         l.registration,
         l.make,
@@ -557,6 +570,24 @@ export default function App() {
     Math.max(1, Math.ceil(visibleLots.length / pageSize)),
   );
   const rows = section === 'users' ? filteredUsers : filteredAuctions;
+  const hasListFilters =
+    !!query ||
+    (section === 'auctions' &&
+      !!(
+        insurerFilter.length ||
+        locationFilter.length ||
+        categoryFilter.length ||
+        (tab === 'CLOSED' && archive !== 'quarter')
+      ));
+  function clearListFilters() {
+    setQuery('');
+    setInsurerFilter([]);
+    setLocationFilter([]);
+    setCategoryFilter([]);
+    setArchive('quarter');
+    setSearchField('');
+    setPage(1);
+  }
   const safePage = Math.min(
     page,
     Math.max(1, Math.ceil(rows.length / pageSize)),
@@ -574,12 +605,13 @@ export default function App() {
         <button
           className="mobile-toggle btn btn-light"
           aria-label="Toggle navigation"
+          aria-controls="workspace-navigation"
           aria-expanded={mobileMenu}
           onClick={() => setMobileMenu(!mobileMenu)}
         >
           ☰
         </button>
-        <nav aria-label="Main navigation">
+        <nav id="workspace-navigation" aria-label="Main navigation">
           <details className="nav-dropdown">
             <summary className={section === 'auctions' ? 'nav-active' : ''}>
               Events <span>⌄</span>
@@ -596,31 +628,6 @@ export default function App() {
                   {s[0] + s.slice(1).toLowerCase()} Auctions
                 </button>
               ))}
-              {canManageEvents && (
-                <button
-                  onClick={(e) => {
-                    setAuctionForm('new');
-                    e.currentTarget.closest('details')?.removeAttribute('open');
-                  }}
-                >
-                  Schedule Auction
-                </button>
-              )}
-              {canManageEvents && (
-                <button onClick={() => navigate('batch-schedule')}>
-                  Schedule grouped inventory
-                </button>
-              )}
-              {canManageEvents && (
-                <button
-                  onClick={(e) => {
-                    navigate('images');
-                    e.currentTarget.closest('details')?.removeAttribute('open');
-                  }}
-                >
-                  Link Images
-                </button>
-              )}
             </div>
           </details>
           {user.role === 'ADMIN' && (
@@ -629,23 +636,16 @@ export default function App() {
                 Users <span>⌄</span>
               </summary>
               <div className="nav-menu">
-                {[
-                  ['ALL', 'All users'],
-                  ['UNVERIFIED', 'Unverified Users'],
-                  ['VERIFIED', 'Verified Users'],
-                  ['TRAINED', 'Trained Users'],
-                  ['BLOCKED', 'Blocked Users'],
-                  ['SSB', 'SSB'],
-                  ['ASB', 'ASB'],
-                  ['REJECTED', 'Rejected Users'],
-                  ['ADMIN', 'Admin Users'],
-                  ['BLOCKED_PAN', 'Blocked PANs'],
-                ].map(([status, label]) => (
+                {userGroups.map(([status, label]) => (
                   <button
                     key={status}
+                    aria-current={
+                      section === 'users' && userStatus === status
+                        ? 'page'
+                        : undefined
+                    }
                     onClick={(e) => {
-                      setUserStatus(status);
-                      navigate('users');
+                      navigate('users', status);
                       e.currentTarget
                         .closest('details')
                         ?.removeAttribute('open');
@@ -657,48 +657,42 @@ export default function App() {
               </div>
             </details>
           )}
-          {isAdmin ? (
+          {isAdmin && operationsForUser(user).length > 0 && (
             <details className="nav-dropdown">
-              <summary className={section === 'workflow' ? 'nav-active' : ''}>
+              <summary className={section === 'operations' ? 'nav-active' : ''}>
                 Operations <span>⌄</span>
               </summary>
               <div className="nav-menu">
-                {workflowSections(user).map((workflowSection) => (
+                {operationsForUser(user).map(([label]) => (
                   <button
-                    key={workflowSection}
+                    key={label}
+                    aria-current={
+                      section === 'operations' && operationPage === label
+                        ? 'page'
+                        : undefined
+                    }
                     onClick={(e) => {
-                      setWorkflowTab(workflowSection);
-                      navigate('workflow');
+                      navigate('operations', label);
                       e.currentTarget
                         .closest('details')
                         ?.removeAttribute('open');
                     }}
                   >
-                    {workflowSection}
+                    {label}
                   </button>
                 ))}
               </div>
             </details>
-          ) : (
-            <button
-              className={section === 'workflow' ? 'nav-active' : ''}
-              onClick={() => navigate('workflow')}
-            >
-              My Wins / Payments
-            </button>
-          )}
-          {!isAdmin && (
-            <>
-              <button onClick={() => navigate('watchlist')}>Watchlist</button>
-              <button onClick={() => navigate('results')}>My Results</button>
-            </>
           )}
         </nav>
         <div className="account">
           <span className="avatar">{user.name[0]}</span>
           <details className="nav-dropdown account-dropdown">
             <summary>
-              {user.name} ⌄<small>{user.role.replaceAll('_', ' ')}</small>
+              {isAdmin ? user.name : 'Profile'} ⌄
+              <small>
+                {isAdmin ? user.role.replaceAll('_', ' ') : user.name}
+              </small>
             </summary>
             <div className="nav-menu">
               <button
@@ -747,7 +741,7 @@ export default function App() {
             : 'Reconnecting · use Refresh to check bids'}
         </span>
       </div>
-      <main className="workspace">
+      <main className="workspace reference-workspace">
         {error && (
           <div
             className="alert alert-danger d-flex justify-content-between"
@@ -766,21 +760,20 @@ export default function App() {
             {notice}
           </div>
         )}
-        {section === 'batch-schedule' && canManageEvents ? (
-          <BatchSchedule onSaved={refresh} />
-        ) : section === 'workflow' ? (
-          <WorkflowHub
-            user={user}
-            auctions={auctions}
-            onRefresh={refresh}
-            tab={workflowTab}
-            onTabChange={setWorkflowTab}
-          />
-        ) : section === 'images' && isAdmin ? (
-          <>
-            <LinkImages auctions={auctions} />
-            <ReferenceImages auctions={auctions} user={user} />
-          </>
+        {section === 'operations' ? (
+          operationsForUser(user).some(([label]) => label === operationPage) ? (
+            <OperationsPage
+              key={operationPage}
+              page={operationPage}
+              auctions={auctions}
+              users={users}
+              user={user}
+            />
+          ) : (
+            <div className="empty-panel">
+              This operation is not available for your role.
+            </div>
+          )
         ) : section === 'profile' ? (
           <Profile
             user={user}
@@ -790,25 +783,11 @@ export default function App() {
               setUser(null);
             }}
           />
-        ) : !isAdmin && (section === 'watchlist' || section === 'results') ? (
-          <BuyerLots mode={section} onOpen={(id) => void enterAuction(id)} />
-        ) : section === 'users' && userStatus === 'BLOCKED_PAN' ? (
-          <>
-            <button className="back-link" onClick={() => setUserStatus('ALL')}>
-              ← Back to users
-            </button>
-            <BlockedPan />
-          </>
         ) : section === 'users' && ['SSB', 'ASB'].includes(userStatus) ? (
-          <>
-            <button className="back-link" onClick={() => setUserStatus('ALL')}>
-              ← Back to users
-            </button>
-            <BlockList
-              mode={userStatus as 'SSB' | 'ASB'}
-              onUser={setUserDetails}
-            />
-          </>
+          <BlockList
+            mode={userStatus as 'SSB' | 'ASB'}
+            onUser={setUserDetails}
+          />
         ) : selected ? (
           <>
             <button
@@ -996,22 +975,24 @@ export default function App() {
                 )}
                 <div className="auction-detail-card">
                   <div className="tabs">
-                    {(detail.auction.status !== 'UPCOMING'
-                      ? detail.auction.status === 'CLOSED' && isAdmin
-                        ? [
-                            'APPROVED',
-                            'PENDING',
-                            'REJECTED',
-                            'UNSOLD',
-                            'CANCELLED',
-                            'WITH_BIDS',
-                            'WITHOUT_BIDS',
-                          ]
-                        : ['OPEN', 'WITH_BIDS', 'WITHOUT_BIDS', 'CANCELLED']
-                      : ['ALL']
-                    ).map((v) => (
+                    {(detail.auction.status === 'UPCOMING'
+                      ? []
+                      : [
+                          ...(detail.auction.status === 'CLOSED'
+                            ? isAdmin
+                              ? closedVehicleViews
+                              : []
+                            : [['OPEN', 'Open Vehicles']]),
+                          ['WITH_BIDS', 'Closed With Bids'],
+                          ['WITHOUT_BIDS', 'Closed Without Bids'],
+                          ...(detail.auction.status === 'CLOSED' && isAdmin
+                            ? []
+                            : [['CANCELLED', 'Cancelled Vehicles']]),
+                        ]
+                    ).map(([v, label]) => (
                       <button
                         key={v}
+                        aria-pressed={detailTab === 'vehicles' && lotView === v}
                         className={
                           detailTab === 'vehicles' && lotView === v
                             ? 'active'
@@ -1022,25 +1003,14 @@ export default function App() {
                           setLotView(v);
                         }}
                       >
-                        {v === 'OPEN'
-                          ? 'Open Vehicles'
-                          : v === 'WITH_BIDS'
-                            ? 'Closed With Bids'
-                            : v === 'WITHOUT_BIDS'
-                              ? 'Closed Without Bids'
-                              : v === 'CANCELLED'
-                                ? 'Cancelled Vehicles'
-                                : (
-                                    {
-                                      APPROVED: 'Approved Vehicles',
-                                      PENDING: 'Approval Pending',
-                                      REJECTED: 'Rejected',
-                                      UNSOLD: 'No Bids',
-                                      UNPICKED: 'Unpicked',
-                                    } as Record<string, string>
-                                  )[v] || 'Vehicles'}
+                        {label}
                       </button>
                     ))}
+                  </div>
+                  <div
+                    className="tabs detail-tools"
+                    aria-label="Additional auction details"
+                  >
                     <button
                       className={
                         detailTab === 'vehicles' && lotView === 'ALL'
@@ -1268,31 +1238,6 @@ export default function App() {
                                         {l.metadata?.yard ||
                                           detail.auction.location}
                                       </small>
-                                      {!isAdmin && (
-                                        <button
-                                          className="watch-button"
-                                          disabled={busy}
-                                          onClick={() =>
-                                            void action(
-                                              () =>
-                                                api(
-                                                  '/lots/' +
-                                                    l.id +
-                                                    '/watchlist',
-                                                  'PUT',
-                                                  { watched: !l.watched },
-                                                ),
-                                              l.watched
-                                                ? 'Removed from watchlist.'
-                                                : 'Added to watchlist.',
-                                            )
-                                          }
-                                        >
-                                          {l.watched
-                                            ? '★ Watching'
-                                            : '☆ Watchlist'}
-                                        </button>
-                                      )}
                                       <button
                                         className="text-action"
                                         aria-expanded={!!expanded}
@@ -1635,35 +1580,28 @@ export default function App() {
             <div className="page-heading">
               <div>
                 <span className="eyebrow text-success">
-                  YOUR AUCTION WORKSPACE
+                  {section === 'users'
+                    ? 'ACCOUNT MANAGEMENT'
+                    : 'YOUR AUCTION WORKSPACE'}
                 </span>
                 <h1>
                   {section === 'users'
-                    ? 'Users'
+                    ? userGroups.find(([status]) => status === userStatus)?.[1]
                     : tab[0] + tab.slice(1).toLowerCase() + ' Auctions'}
                 </h1>
                 <p>
                   {section === 'users'
                     ? 'Manage accounts, permissions and participation.'
-                    : 'Find the next opportunity. Give every vehicle a new possibility.'}
+                    : 'Browse by auction status, seller, location and vehicle category.'}
                 </p>
               </div>
               <div className="heading-actions">
-                {isAdmin && (
+                {isAdmin && section === 'users' && (
                   <button
                     className="btn btn-success"
-                    onClick={() =>
-                      section === 'users'
-                        ? setUserForm('new')
-                        : setAuctionForm('new')
-                    }
+                    onClick={() => setUserForm('new')}
                   >
-                    +{' '}
-                    {section === 'users'
-                      ? userStatus === 'ADMIN'
-                        ? 'Add Admin User'
-                        : 'Add User'
-                      : 'Schedule Auction'}
+                    + {userStatus === 'ADMIN' ? 'Add Admin User' : 'Add User'}
                   </button>
                 )}
               </div>
@@ -1671,18 +1609,16 @@ export default function App() {
 
             <div
               className={
-                'content-card ' +
+                'content-card data-list-card ' +
                 (section === 'auctions' ? 'auction-list-card' : '')
               }
             >
               {section === 'auctions' && (
-                <div className="tabs">
-                  <button className="active">
-                    Insurance{' '}
-                    <span>
-                      {auctions.filter((a) => a.status === tab).length}
-                    </span>
-                  </button>
+                <div className="entity-tabs">
+                  <span className="active">
+                    Insurance ({auctions.filter((a) => a.status === tab).length}
+                    )
+                  </span>
                 </div>
               )}
               {section === 'auctions' && (
@@ -1701,7 +1637,7 @@ export default function App() {
                       values: [...new Set(auctions.map((a) => a.location))],
                     },
                     {
-                      label: 'Products',
+                      label: 'Vehicle category',
                       value: categoryFilter,
                       set: setCategoryFilter,
                       values: ['2W', '3W', '4W', 'CV', 'CE', 'FE', 'Mixed'],
@@ -1710,8 +1646,12 @@ export default function App() {
                     <div key={f.label} className="field">
                       <label>{f.label}</label>
                       <details className="filter-dropdown">
-                        <summary>
-                          {f.value.length ? f.value.join(', ') : 'All'} ⌄
+                        <summary
+                          aria-label={
+                            f.label + ': ' + (f.value.join(', ') || 'All')
+                          }
+                        >
+                          {f.value.length ? f.value.join(', ') : 'All'}
                         </summary>
                         <div className="filter-options">
                           <button type="button" onClick={() => f.set([])}>
@@ -1754,12 +1694,29 @@ export default function App() {
                 </div>
               )}
               <div className="table-toolbar">
-                <div>
+                <div className="list-result-summary">
                   <span className="section-marker" />
-                  {section === 'auctions' ? 'Insurance' : 'Accounts'}{' '}
+                  {section === 'auctions'
+                    ? 'Insurance auctions'
+                    : userGroups.find(
+                        ([status]) => status === userStatus,
+                      )?.[1] || 'Users'}{' '}
                   <span className="text-secondary">({rows.length})</span>
+                  <small>
+                    {section === 'auctions'
+                      ? 'All auction times are IST'
+                      : 'Contact details, access and account status'}
+                  </small>
                 </div>
                 <div className="toolbar-right">
+                  {hasListFilters && (
+                    <button
+                      className="btn btn-light btn-sm"
+                      onClick={clearListFilters}
+                    >
+                      Clear filters
+                    </button>
+                  )}
                   {isAdmin && section === 'users' && (
                     <a
                       className="btn btn-outline-success btn-sm"
@@ -1830,9 +1787,10 @@ export default function App() {
               </div>
               <div className="table-responsive">
                 {section === 'users' ? (
-                  <table className="table">
+                  <table className="table user-list-table">
                     <thead>
                       <tr>
+                        <th>User Name</th>
                         <th>
                           <button
                             className="sort-heading"
@@ -1841,11 +1799,14 @@ export default function App() {
                               setSortDesc(!sortDesc);
                             }}
                           >
-                            User name / name ↕
+                            Full Name ↕
                           </button>
                         </th>
-                        <th>Phone</th>
-                        <th>Role</th>
+                        <th>Mobile No</th>
+                        <th>Email</th>
+                        <th>State</th>
+                        <th>Reg. Date</th>
+                        <th>User Role</th>
                         <th>Status</th>
                         <th>Action</th>
                       </tr>
@@ -1855,19 +1816,25 @@ export default function App() {
                         .slice((safePage - 1) * pageSize, safePage * pageSize)
                         .map((u) => (
                           <tr key={u.id}>
-                            <td>
+                            <td data-label="User Name">
                               <button
                                 className="auction-title"
                                 onClick={() => setUserDetails(u.id)}
                               >
-                                {u.name}
+                                {u.username || u.email}
                               </button>
-                              <small>{u.username || u.email}</small>
-                              <small>{u.email}</small>
                             </td>
-                            <td>{u.phone || '—'}</td>
-                            <td>{u.role.replaceAll('_', ' ')}</td>
-                            <td>
+                            <td data-label="Full Name">{u.name}</td>
+                            <td data-label="Mobile No">{u.phone || '—'}</td>
+                            <td data-label="Email">{u.email}</td>
+                            <td data-label="State">
+                              {u.profile?.state || '—'}
+                            </td>
+                            <td data-label="Reg. Date">{date(u.created_at)}</td>
+                            <td data-label="User Role">
+                              {u.role.replaceAll('_', ' ')}
+                            </td>
+                            <td data-label="Status">
                               <button
                                 className="status-action"
                                 title="Change User Status"
@@ -1876,7 +1843,7 @@ export default function App() {
                                 <Badge status={u.status} />
                               </button>
                             </td>
-                            <td>
+                            <td data-label="Actions">
                               <div className="event-actions">
                                 <button
                                   className="btn btn-sm btn-outline-secondary"
@@ -1948,6 +1915,9 @@ export default function App() {
                                 {a.title}
                               </button>
                               <small>{a.insurer}</small>
+                              <span className="category-label">
+                                {a.category || '4W'}
+                              </span>
                             </td>
                             <td data-label="Location">{a.location}</td>
                             <td data-label="Start">{date(a.starts_at)}</td>
@@ -2001,21 +1971,29 @@ export default function App() {
                   <h3>
                     {loading
                       ? 'Loading…'
-                      : query
+                      : hasListFilters
                         ? 'No matching results'
                         : section === 'users'
                           ? 'No users in this view'
                           : `No ${tab.toLowerCase()} auctions yet`}
                   </h3>
                   <p>
-                    {query
-                      ? 'Try another search.'
+                    {hasListFilters
+                      ? 'Try a different search or clear your filters to see more records.'
                       : section === 'auctions' && isAdmin
                         ? 'Schedule an insurance auction to add your vehicle inventory.'
                         : section === 'auctions'
                           ? 'Auctions will appear here when they are available.'
                           : 'Add a user or choose another status.'}
                   </p>
+                  {hasListFilters && !loading && (
+                    <button
+                      className="btn btn-outline-success btn-sm"
+                      onClick={clearListFilters}
+                    >
+                      Clear filters
+                    </button>
+                  )}
                 </div>
               )}
               <div className="table-footer">
@@ -2040,6 +2018,7 @@ export default function App() {
                   <button
                     className="btn btn-sm btn-light"
                     disabled={safePage <= 1}
+                    aria-label="Previous page"
                     onClick={() => setPage(safePage - 1)}
                   >
                     ←
@@ -2048,6 +2027,7 @@ export default function App() {
                   <button
                     className="btn btn-sm btn-light"
                     disabled={safePage * pageSize >= rows.length}
+                    aria-label="Next page"
                     onClick={() => setPage(safePage + 1)}
                   >
                     →

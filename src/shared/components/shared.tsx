@@ -5,6 +5,7 @@ export type User = {
   email: string;
   phone: string;
   username?: string;
+  created_at?: string;
   profile?: Record<string, string>;
   insurance_eligible?: boolean;
   categories?: string[];

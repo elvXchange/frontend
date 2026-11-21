@@ -1,0 +1,379 @@
+/* Shared layout bounds keep wide data inside its own scroll container. */
+#root,
+.workspace,
+.public-container,
+.content-card,
+.workflow-panel,
+.form-card,
+.user-support-panel,
+.table-responsive,
+.page-heading > div,
+.form-grid > *,
+.workflow-form > *,
+.user-editor-grid > *,
+.vehicle-detail-layout > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.table-responsive {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.page-heading h1,
+.page-heading p,
+.file-link,
+.operations-file-summary,
+.detail-grid strong,
+.terms,
+.entry-terms {
+  overflow-wrap: anywhere;
+}
+.photo-grid > a {
+  max-width: 100%;
+}
+.photo-grid img {
+  max-width: 100%;
+}
+.form-control,
+.form-select {
+  min-width: 0;
+  max-width: 100%;
+}
+dialog {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (max-width: 1024px) {
+  .site-header:not(.public-header) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    height: auto;
+    min-height: 76px;
+    padding: 12px 20px;
+    gap: 12px;
+    max-height: calc(100dvh - 12px);
+    overflow-y: auto;
+    align-items: start;
+  }
+  .site-header:not(.public-header) .brand-button {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+    align-self: center;
+  }
+  .site-header .mobile-toggle {
+    display: block;
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+  }
+  .site-header:not(.public-header) > nav {
+    display: none;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    height: auto;
+    width: 100%;
+  }
+  .site-header.mobile-open > nav {
+    display: grid;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #ffffff25;
+  }
+  .site-header .account {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0;
+    min-width: 0;
+    max-width: 240px;
+  }
+  .site-header .avatar,
+  .site-header .header-clock {
+    display: none;
+  }
+  .site-header .nav-dropdown summary {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+  .site-header:not(.public-header) .nav-menu {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    margin-block: 4px;
+    box-shadow: none;
+  }
+  .nav-menu button {
+    min-height: 44px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .site-header .account-dropdown summary {
+    max-width: 100%;
+  }
+  .operations-assignment-grid {
+    grid-template-columns: 1fr;
+  }
+  .user-editor-grid,
+  .vehicle-detail-layout {
+    grid-template-columns: 1fr;
+  }
+  .user-support-panel {
+    position: static;
+  }
+}
+@media (max-width: 770px) {
+  .workspace-strip {
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    padding: 10px 16px;
+  }
+  .workspace-strip > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .workspace-strip .connection {
+    align-items: baseline;
+  }
+  .reference-workspace .page-heading {
+    align-items: stretch;
+  }
+  .heading-actions,
+  .login-action-row,
+  .toolbar-right,
+  .form-actions,
+  .workflow-actions,
+  .block-row,
+  .operations-file-summary {
+    flex-wrap: wrap;
+    min-width: 0;
+    gap: 10px;
+  }
+  .reference-workspace .table-toolbar,
+  .detail-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .table-toolbar > label,
+  .table-toolbar > .form-control,
+  .table-toolbar > .form-select,
+  .toolbar-right,
+  .data-list-card .search-box,
+  .search-box,
+  .closed-search-select,
+  .refresh-select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    flex-basis: auto;
+  }
+  .toolbar-right > .form-control {
+    width: 100%;
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .form-grid,
+  .workflow-form,
+  .detail-grid,
+  .public-login-row,
+  .public-info-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .schedule-page .upload-box,
+  .schedule-modal .upload-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .form-card,
+  .workflow-panel,
+  .manual-entry,
+  .profile-card,
+  .login-form-card,
+  .important-message,
+  .info-card {
+    padding: 16px;
+  }
+  .form-actions > .btn,
+  .login-action-row > .btn,
+  .heading-actions > .btn,
+  .workflow-actions > .btn {
+    flex: 1 1 140px;
+  }
+  .btn,
+  .reference-workspace .btn-sm,
+  .reference-workspace .icon-action,
+  .text-action,
+  .back-link,
+  .reference-workspace .tabs button {
+    min-height: 44px;
+  }
+  .reference-workspace .detail-tools button {
+    white-space: normal;
+    text-align: left;
+  }
+  .btn,
+  .toolbar-right .btn {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .form-control,
+  .form-select,
+  .search-box input,
+  .bid-form input {
+    font-size: 16px;
+  }
+  .filter-dropdown summary {
+    max-width: 100%;
+  }
+  .filter-options {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .filter-options label,
+  .category-checks label,
+  .operations-assignment-grid label {
+    min-height: 40px;
+    align-items: center;
+  }
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .auction-detail-card .vehicle-table .bid-form {
+    min-width: 0;
+    width: 100%;
+  }
+  .bid-form .input-group {
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+  .bid-form .input-group input {
+    min-width: 0;
+    width: 1%;
+    flex: 1 1 auto;
+  }
+  .bid-form .input-group .btn {
+    padding-inline: 10px;
+  }
+  .terms {
+    padding: 16px;
+  }
+  .table-note {
+    padding: 12px 16px;
+    overflow-wrap: anywhere;
+  }
+  .reference-workspace .table-footer > div {
+    flex-wrap: wrap;
+  }
+  .reference-workspace .user-list-table td[data-label='Actions'],
+  .reference-workspace .auction-list-table td[data-label='Action'] {
+    display: block;
+  }
+  .reference-workspace .user-list-table td[data-label='Actions']::before,
+  .reference-workspace .auction-list-table td[data-label='Action']::before {
+    display: block;
+    margin-bottom: 8px;
+  }
+  .auction-detail-card .vehicle-table .price-cell {
+    white-space: normal;
+  }
+  .modal-heading {
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .modal-heading h2 {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .modal-heading > button {
+    flex-shrink: 0;
+  }
+  .photo-grid > a {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+  .photo-grid img {
+    width: 100%;
+    object-fit: cover;
+  }
+  .site-footer {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-block: 20px;
+  }
+}
+@media (max-width: 480px) {
+  .site-header:not(.public-header) {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 10px 12px;
+  }
+  .site-header .mobile-toggle {
+    grid-column: 2;
+  }
+  .site-header .account {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    max-width: 100%;
+    justify-content: flex-end;
+  }
+  .site-header .account-dropdown {
+    width: 100%;
+  }
+  .site-header .account-dropdown summary {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .site-header:not(.public-header) > nav {
+    grid-row: 3;
+  }
+  .reference-workspace .page-heading {
+    padding: 16px;
+  }
+  .reference-workspace .page-heading h1 {
+    font-size: 21px;
+  }
+  .auction-meta,
+  .detail-grid,
+  .confirmation-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stats-grid,
+  .reference-workspace .staff-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .reference-workspace .staff-summary > div,
+  .reference-workspace .staff-summary > button {
+    padding: 12px;
+  }
+  .reference-workspace .auction-list-table td,
+  .reference-workspace .user-list-table td {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 8px;
+  }
+  dialog,
+  .user-editor-modal,
+  .vehicle-editor-modal,
+  .schedule-modal {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 14px;
+  }
+  .public-container {
+    padding-inline: 12px;
+  }
+  .public-header nav {
+    gap: 12px;
+  }
+  .public-header nav a {
+    font-size: 11px;
+    padding-block: 10px;
+  }
+}
