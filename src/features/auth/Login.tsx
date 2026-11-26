@@ -1,3 +1,4 @@
+import { AuthInput } from '../../shared/AuthInput';
 import { BatchSchedule } from '../../features/imports/imports-ui';
 import {
   VehicleCommercial,
@@ -99,6 +100,7 @@ const demoStateContacts = [
 ];
 
 export function Login({ onLogin }: { onLogin: (user: User) => void }) {
+  const [showPassword, setShowPassword] = useState(false);
   const [register, setRegister] = useState(false),
     [help, setHelp] = useState(false),
     [email, setEmail] = useState(''),
@@ -151,19 +153,19 @@ export function Login({ onLogin }: { onLogin: (user: User) => void }) {
                 }
               }}
             >
-              <Field label="User Name">
-                <input
-                  ref={usernameRef}
+              <Field label="Username or email">
+                <AuthInput
+                  inputRef={usernameRef}
                   className="form-control"
                   required
-                  autoComplete="username"
+                  maxLength={254} pattern=".*\S.*" autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </Field>
               <Field label="Password">
-                <input
-                  type="password"
+                <AuthInput
+                  type={showPassword ? 'text' : 'password'}
                   className="form-control"
                   required
                   maxLength={128}
@@ -172,6 +174,7 @@ export function Login({ onLogin }: { onLogin: (user: User) => void }) {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </Field>
+              <button type="button" className="btn btn-link btn-sm" aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show password'}</button>
               <div className="login-action-row">
                 <button className="btn btn-success" disabled={busy}>
                   {busy ? 'Signing in…' : 'Sign in'}

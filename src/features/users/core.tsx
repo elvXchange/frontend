@@ -1,3 +1,4 @@
+import { AuthInput } from '../../shared/AuthInput';
 import { apiUrl } from '../../shared/api';
 import { VehicleCommercial } from '../workflow/operations-ui';
 import { useEffect, useState } from 'react';
@@ -54,6 +55,7 @@ export function CategoryChecks({
     </fieldset>
   );
 }
+const mobilePattern = '(?:\\+91[ \\-]*)?[6-9](?:[ \\-]*[0-9]){9}';
 export function ProfileFields({
   value,
   onChange,
@@ -75,9 +77,10 @@ export function ProfileFields({
         .filter(([key]) => section === 'all' || groups[section].includes(key))
         .map(([key, label]) => (
           <Field key={key} label={label}>
-            <input
+            <AuthInput
               className="form-control"
-              maxLength={key === 'address' ? 500 : key === 'pin_code' ? 6 : 100}
+              pattern={{alternate_phone:mobilePattern,pin_code:'[0-9]{6}',pan:'[A-Za-z]{5}[0-9]{4}[A-Za-z]',gst:'[0-9]{2}[A-Za-z]{5}[0-9]{4}[A-Za-z][1-9A-Za-z][Zz][A-Za-z0-9]'}[key as 'alternate_phone']}
+              maxLength={key === 'address' ? 2000 : key === 'pin_code' ? 6 : key === 'alternate_phone' ? 25 : 80}
               value={value[key] || ''}
               onChange={(e) => onChange({ ...value, [key]: e.target.value })}
             />
@@ -87,6 +90,7 @@ export function ProfileFields({
   );
 }
 export function Registration({ onClose }: { onClose: () => void }) {
+  const [showPassword, setShowPassword] = useState(false);
   const [categories, setCategories] = useState(['4W']);
   const [form, setForm] = useState({
       name: '',
@@ -159,18 +163,22 @@ export function Registration({ onClose }: { onClose: () => void }) {
                     password: 'Password (12+ characters)',
                   }).map(([k, label]) => (
                     <Field key={k} label={label}>
-                      <input
+                      <AuthInput
                         required
                         className="form-control"
                         type={
                           k === 'password'
-                            ? 'password'
+                            ? (showPassword ? 'text' : 'password')
                             : k === 'email'
                               ? 'email'
                               : 'text'
                         }
+                        autoComplete={{username:'username',email:'email',phone:'tel',password:'new-password'}[k]}
+                        inputMode={k === 'phone' ? 'tel' : undefined}
+                        title={k === 'phone' ? 'Enter a 10-digit Indian mobile number, optionally starting with +91.' : k === 'username' ? 'Use 3?160 letters, numbers, or _.@+-.' : undefined}
+                        pattern={k === 'phone' ? mobilePattern : k === 'username' ? '[A-Za-z0-9_.@\\+\\-]{3,160}' : undefined}
                         minLength={k === 'password' ? 12 : undefined}
-                        maxLength={k === 'password' ? 128 : 160}
+                        maxLength={k === 'password' ? 128 : k === 'email' ? 254 : 160}
                         value={form[k as keyof typeof form]}
                         onChange={(e) =>
                           setForm({ ...form, [k]: e.target.value })
@@ -178,6 +186,7 @@ export function Registration({ onClose }: { onClose: () => void }) {
                       />
                     </Field>
                   ))}
+                  <button type="button" className="btn btn-link btn-sm" aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)}>{showPassword ? 'Hide password' : 'Show password'}</button>
                 </div>
                 <ProfileFields
                   section="contact"
@@ -188,11 +197,11 @@ export function Registration({ onClose }: { onClose: () => void }) {
               <section className="form-card">
                 <h3>Basic Info</h3>
                 <Field label="Full name">
-                  <input
+                  <AuthInput
                     className="form-control"
                     required
                     maxLength={160}
-                    value={form.name}
+                    pattern=".*\S.*" value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                   />
                 </Field>

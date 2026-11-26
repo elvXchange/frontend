@@ -260,7 +260,10 @@ export default function App() {
         });
     };
     document.addEventListener('click', openAttachment);
-    const socket = io(apiBaseUrl || undefined, { withCredentials: true });
+    const socket = io(apiBaseUrl || undefined, {
+      withCredentials: true,
+      ...(import.meta.env.VITE_PROXY_POLLING === '1' && { transports: ['polling'] }),
+    });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const onChange = () => {
       clearTimeout(timer);
