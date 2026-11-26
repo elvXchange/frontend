@@ -4,6 +4,7 @@ if (!target)
 const api = new URL(target);
 if (api.protocol !== 'https:') throw new Error('Render API must use HTTPS.');
 export const config = {
+  buildCommand: 'npm run build',
   rewrites: ['/api/:path*', '/socket.io/:path*'].map((source) => ({
     source,
     destination: api.origin + source,
