@@ -120,42 +120,7 @@ export function localDate(s: string) {
     .slice(0, 16);
 }
 
-export async function api<T = unknown>(
-  path: string,
-  method = 'GET',
-  body?: unknown,
-): Promise<T> {
-  const form = body instanceof FormData;
-  const controller = new AbortController(),
-    timeout = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch(`/api${path}`, {
-      method,
-      credentials: 'same-origin',
-      headers: body && !form ? { 'Content-Type': 'application/json' } : {},
-      body: body ? (form ? body : JSON.stringify(body)) : undefined,
-      signal: controller.signal,
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      if (response.status === 401 && path !== '/auth/login')
-        window.dispatchEvent(new Event('session-ended'));
-      throw Object.assign(new Error(data.error || 'Request failed.'), {
-        reportBase64:
-          typeof data.reportBase64 === 'string' ? data.reportBase64 : undefined,
-      });
-    }
-    return data as T;
-  } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError')
-      throw new Error(
-        'Request timed out. Refresh to check the result before retrying.',
-      );
-    throw e;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
+export { api, renewSession } from '../api';
 export function Brand() {
   return (
     <span className="brand">

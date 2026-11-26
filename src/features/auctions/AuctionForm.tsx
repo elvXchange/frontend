@@ -547,7 +547,7 @@ export function AuctionForm({
           {busy
             ? 'Saving…'
             : inline
-              ? 'Save draft'
+              ? 'Review and schedule'
               : a
                 ? 'Save changes'
                 : 'Schedule auction'}

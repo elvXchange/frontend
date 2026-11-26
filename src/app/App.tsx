@@ -1,3 +1,4 @@
+import { scheduleAuction } from '../features/auctions/schedule-auction';
 import {
   VehicleCommercial,
   WorkflowCreditBanner,
@@ -34,6 +35,7 @@ import {
 
 import {
   api,
+  renewSession,
   InventoryErrorReport,
   Brand,
   Field,
@@ -226,6 +228,37 @@ export default function App() {
   }, [refresh, refreshSeconds]);
   useEffect(() => {
     if (!user) return;
+    const openAttachment = (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element
+          ? event.target.closest('a[href]')
+          : null;
+      if (
+        !(link instanceof HTMLAnchorElement) ||
+        link.origin !== location.origin ||
+        !link.pathname.startsWith('/api/')
+      )
+        return;
+      event.preventDefault();
+      const tab =
+        link.target === '_blank' || event.ctrlKey || event.metaKey
+          ? window.open('about:blank', '_blank')
+          : null;
+      if (tab) tab.opener = null;
+      void renewSession()
+        .then(() => {
+          if (tab) tab.location.replace(link.href);
+          else {
+            const download = link.cloneNode(false) as HTMLAnchorElement;
+            download.click();
+          }
+        })
+        .catch((error: Error) => {
+          tab?.close();
+          setError(error.message);
+        });
+    };
+    document.addEventListener('click', openAttachment);
     const socket = io({ withCredentials: true });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const onChange = () => {
@@ -236,13 +269,32 @@ export default function App() {
       setConnected(true);
       onChange();
     });
-    socket.on('disconnect', () => setConnected(false));
-    socket.on('connect_error', () => setConnected(false));
+    let active = true;
+    const reconnect = () => {
+      void renewSession()
+        .then(() => {
+          if (active) socket.connect();
+        })
+        .catch(() => setConnected(false));
+    };
+    socket.on('disconnect', (reason) => {
+      setConnected(false);
+      if (reason === 'io server disconnect') reconnect();
+    });
+    socket.on('connect_error', (error) => {
+      setConnected(false);
+      if (error.message === 'Please sign in.') reconnect();
+    });
     socket.on('changed', onChange);
-    const focus = () => void refresh();
+    const focus = () => {
+      void refresh();
+      if (!socket.connected && !socket.active) socket.connect();
+    };
     window.addEventListener('focus', focus);
     return () => {
       clearTimeout(timer);
+      document.removeEventListener('click', openAttachment);
+      active = false;
       socket.disconnect();
       setConnected(false);
       window.removeEventListener('focus', focus);
@@ -762,11 +814,10 @@ export default function App() {
         )}
         {section === 'operations' ? (
           operationsForUser(user).some(([label]) => label === operationPage) ? (
-            <OperationsPage
+            <OperationsPage onScheduled={refresh}
               key={operationPage}
               page={operationPage}
               auctions={auctions}
-              users={users}
               user={user}
             />
           ) : (
@@ -2136,33 +2187,7 @@ export default function App() {
           onSave={async (data, files) => {
             let saved: { id: string };
             if (auctionForm === 'new') {
-              const excel = (files || []).find((f) =>
-                f.name.toLowerCase().endsWith('.xlsx'),
-              );
-              const pdf = (files || []).find((f) =>
-                f.name.toLowerCase().endsWith('.pdf'),
-              );
-              if (!excel || !pdf)
-                throw new Error(
-                  'Attach both Terms Excel and Terms PDF before scheduling.',
-                );
-              const body = new FormData();
-              body.append('payload', JSON.stringify(data));
-              body.append('terms_excel', excel);
-              body.append('terms_pdf', pdf);
-              const zip = (files || []).find((f) =>
-                f.name.toLowerCase().endsWith('.zip'),
-              );
-              if (zip) body.append('images_zip', zip);
-              const extra = (files || []).find(
-                (f) => f !== excel && f !== pdf && f !== zip,
-              );
-              if (extra) body.append('additional_terms', extra);
-              saved = await api<{ id: string }>(
-                '/workflow/schedule',
-                'POST',
-                body,
-              );
+              saved = await scheduleAuction(data, files);
             } else
               saved = await api<{ id: string }>(
                 `/auctions/${auctionForm.auction.id}`,

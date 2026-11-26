@@ -1,28 +1,23 @@
-import { useState } from 'react';
+import { scheduleAuction } from '../auctions/schedule-auction';
+import { useState, useEffect } from 'react';
 import { AuctionForm } from '../auctions/AuctionForm';
 import { BlockedPan, LinkImages } from '../users/core';
 import { ReferenceImages } from './workflow';
-import { Modal, type Auction, type User } from '../../shared/components/shared';
-
-const categories = ['2W', '3W', '4W', 'CV', 'CE', 'FE', 'Mixed'];
-const unique = (values: string[]) =>
-  [...new Set(values.filter(Boolean))].sort();
+import { api, Modal, type Auction, type User } from '../../shared/components/shared';
 
 export function OperationsPage({
+  onScheduled,
   page,
   auctions,
-  users,
   user,
 }: {
+  onScheduled: () => Promise<void>;
   page: string;
   auctions: Auction[];
-  users: User[];
   user: User;
 }) {
   const [notice, setNotice] = useState('');
   const [formKey, setFormKey] = useState(0);
-  const locations = unique(auctions.map((a) => a.location));
-  const sellers = unique(auctions.map((a) => a.insurer));
   return (
     <>
       <div className="page-heading">
@@ -51,7 +46,7 @@ export function OperationsPage({
       )}
       {page === 'Schedule Auctions' ? (
         <>
-          <DraftNotice />
+          <p>Review the inventory and terms before scheduling.</p>
           <AuctionForm
             key={formKey}
             inline
@@ -59,8 +54,12 @@ export function OperationsPage({
               setFormKey((k) => k + 1);
               setNotice('');
             }}
-            onSave={async () => {
-              setNotice('Auction draft reviewed. It has not been scheduled.');
+            onSave={async (data, files) => {
+              if (!window.confirm('Schedule this auction with the displayed inventory and terms?')) return;
+              await scheduleAuction(data, files);
+              setFormKey((key) => key + 1);
+              setNotice('Auction scheduled.');
+              await onScheduled();
             }}
           />
         </>
@@ -74,32 +73,13 @@ export function OperationsPage({
       ) : page === 'Activity Logs' ? (
         <ActivityLogs />
       ) : page === 'Calling Master' ? (
-        <CallingMaster users={users} locations={locations} sellers={sellers} />
+        <CallingMaster />
       ) : page.startsWith('Import ') ? (
         <ImportPage page={page} />
       ) : (
-        <CatalogPage
-          page={page}
-          values={
-            page === 'Locations'
-              ? locations
-              : page === 'Sellers'
-                ? sellers
-                : categories
-          }
-          auctions={auctions}
-        />
+        <CatalogPage key={page} page={page} />
       )}
     </>
-  );
-}
-
-function DraftNotice() {
-  return (
-    <p className="operations-draft-note">
-      <strong>Draft preview.</strong> Changes on this screen are kept only while
-      this page is open.
-    </p>
   );
 }
 
@@ -109,29 +89,15 @@ type CatalogRow = {
   code: string;
   detail: string;
   status: string;
-  draft?: boolean;
 };
-function CatalogPage({
-  page,
-  values,
-  auctions,
-}: {
-  page: string;
-  values: string[];
-  auctions: Auction[];
-}) {
-  const [rows, setRows] = useState<CatalogRow[]>(() =>
-    values.map((name) => ({
-      id: name,
-      name,
-      code:
-        page === 'Sellers'
-          ? auctions.find((a) => a.insurer === name)?.seller_code || ''
-          : '',
-      detail: '',
-      status: 'Active',
-    })),
-  );
+function CatalogPage({page}: {page:string}) {
+  const [rows,setRows]=useState<CatalogRow[]>([]);
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{
+    let current=true;
+    api<CatalogRow[]>('/operations/catalog/'+page).then(data=>{if(current)setRows(data);}).catch(e=>{if(current)setError(e.message);});
+    return ()=>{current=false;};
+  },[page]);
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState<CatalogRow | null>(null);
   const [error, setError] = useState('');
@@ -148,7 +114,7 @@ function CatalogPage({
   );
   return (
     <>
-      <DraftNotice />
+      {error && !editing && <p role="alert">{error}</p>}
       <div className="content-card">
         <div className="table-toolbar">
           <strong>
@@ -172,7 +138,6 @@ function CatalogPage({
                   code: '',
                   detail: '',
                   status: 'Active',
-                  draft: true,
                 });
               }}
             >
@@ -196,7 +161,7 @@ function CatalogPage({
                 <tr key={row.id}>
                   <td>
                     <strong>{row.name}</strong>
-                    {row.draft && <small>Draft</small>}
+
                   </td>
                   <td>{row.code || '—'}</td>
                   <td>{row.detail || '—'}</td>
@@ -209,7 +174,7 @@ function CatalogPage({
                         setEditing({ ...row });
                       }}
                     >
-                      Edit draft
+                      Edit
                     </button>
                   </td>
                 </tr>
@@ -225,10 +190,10 @@ function CatalogPage({
         <div className="table-footer">{filtered.length} records</div>
       </div>
       {editing && (
-        <Modal title={`${singular} draft`} onClose={() => setEditing(null)}>
+        <Modal title={`${singular}`} onClose={() => setEditing(null)}>
           <form
             className="form-grid"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               if (
                 rows.some(
@@ -240,11 +205,12 @@ function CatalogPage({
                 setError('This name is already in the list.');
                 return;
               }
-              setRows((old) => [
-                ...old.filter((r) => r.id !== editing.id),
-                { ...editing, name: editing.name.trim(), draft: true },
-              ]);
-              setEditing(null);
+              setBusy(true);
+              try {
+                const saved=await api<CatalogRow>('/operations/catalog/'+page,rows.some(r=>r.id===editing.id)?'PUT':'POST',editing);
+                setRows(old=>[...old.filter(r=>r.id!==saved.id),saved].sort((a,b)=>a.name.localeCompare(b.name)));
+                setEditing(null);
+              } catch(e){setError((e as Error).message);} finally {setBusy(false);}
             }}
           >
             <label>
@@ -308,7 +274,7 @@ function CatalogPage({
               >
                 Cancel
               </button>
-              <button className="btn btn-success">Save draft</button>
+              <button disabled={busy} className="btn btn-success">Save</button>
             </div>
           </form>
         </Modal>
@@ -450,15 +416,12 @@ type CallingDraft = {
   locations: string[];
   sellers: string[];
 };
-function CallingMaster({
-  users,
-  locations,
-  sellers,
-}: {
-  users: User[];
-  locations: string[];
-  sellers: string[];
-}) {
+function CallingMaster() {
+  const [data,setData]=useState<{users:User[];categories:string[];locations:string[];sellers:string[]}>({users:[],categories:[],locations:[],sellers:[]});
+  const [error,setError]=useState('');
+  const [busy,setBusy]=useState(false);
+  useEffect(()=>{let current=true;api<typeof data>('/operations/callers').then(value=>{if(current)setData(value);}).catch(e=>{if(current)setError(e.message);});return ()=>{current=false;};},[]);
+  const {users,locations,sellers,categories}=data;
   const [telecaller, setTelecaller] = useState('');
   const [drafts, setDrafts] = useState<Record<string, CallingDraft>>({});
   const [notice, setNotice] = useState('');
@@ -470,14 +433,13 @@ function CallingMaster({
   };
   return (
     <>
-      <DraftNotice />
+      {error && <p role="alert">{error}</p>}
       <div className="content-card operations-calling-page">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            setNotice(
-              'Calling assignment draft ready. No account access has been changed.',
-            );
+          onSubmit={async(e) => {
+            e.preventDefault();setBusy(true);setError('');setNotice('');
+            try {await api('/operations/callers/'+telecaller,'PUT',selected);setNotice('Calling assignment saved.');}
+            catch(e){setError((e as Error).message);}finally{setBusy(false);}
           }}
         >
           <div className="table-toolbar">
@@ -518,7 +480,7 @@ function CallingMaster({
               <fieldset key={key} disabled={!telecaller}>
                 <legend>{label}</legend>
                 <div>
-                  {values.map((v) => (
+                  {[...new Set([...values,...selected[key]])].map((v) => (
                     <label key={v}>
                       <input
                         type="checkbox"
@@ -550,8 +512,8 @@ function CallingMaster({
             </p>
           )}
           <div className="form-actions">
-            <button className="btn btn-success" disabled={!telecaller}>
-              Save assignment draft
+            <button className="btn btn-success" disabled={!telecaller || busy}>
+              Save assignment
             </button>
           </div>
         </form>
@@ -561,59 +523,24 @@ function CallingMaster({
 }
 
 function ActivityLogs() {
-  const [query, setQuery] = useState('');
-  return (
-    <div className="content-card">
-      <div className="table-toolbar">
-        <label>
-          Search activity
-          <input
-            className="form-control"
-            placeholder="Operator, action or record…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-        </label>
-        <label>
-          From
-          <input type="date" className="form-control" />
-        </label>
-        <label>
-          To
-          <input type="date" className="form-control" />
-        </label>
-        <label>
-          Action
-          <select className="form-select">
-            <option>All actions</option>
-            <option>Auction scheduled</option>
-            <option>User updated</option>
-            <option>Finance imported</option>
-            <option>Images linked</option>
-          </select>
-        </label>
-      </div>
-      <div className="table-responsive">
-        <table className="table">
-          <thead>
-            <tr>
-              {['Date / Time', 'Operator', 'Action', 'Record', 'Details'].map(
-                (h) => (
-                  <th key={h}>{h}</th>
-                ),
-              )}
-            </tr>
-          </thead>
-        </table>
-      </div>
-      <div className="empty-panel">
-        <h3>Activity history</h3>
-        <p>
-          The activity feed is not connected yet. Recorded actions will appear
-          here.
-        </p>
-      </div>
-      <div className="table-footer">0 records</div>
-    </div>
-  );
+  const [filters,setFilters]=useState({q:'',from:'',to:'',action:''});
+  const [offset,setOffset]=useState(0);
+  type Row={id:string;created_at:string;operator:string;action:string;entity_id:string};
+  const [data,setData]=useState<{rows:Row[];more:boolean}>({rows:[],more:false});
+  const [error,setError]=useState('');
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{
+    let current=true;
+    setLoading(true);setError('');
+    const params=new URLSearchParams({offset:String(offset)});
+    for(const [key,value] of Object.entries(filters)) if(value)params.set(key,value);
+    api<typeof data>('/operations/activity?'+params).then(value=>{if(current)setData(value);}).catch(e=>{if(current)setError(e.message);}).finally(()=>{if(current)setLoading(false);});
+    return ()=>{current=false;};
+  },[filters,offset]);
+  return <div className="content-card"><div className="table-toolbar">
+    {(['q','from','to','action'] as const).map(key=><label key={key}>{{q:'Search activity',from:'From',to:'To',action:'Exact action'}[key]}
+    <input className="form-control" type={key==='from'||key==='to'?'date':'search'} value={filters[key]} onChange={e=>{setFilters({...filters,[key]:e.target.value});setOffset(0);}}/></label>)}</div>
+    {error?<p role="alert">{error}</p>:loading?<p>Loading activity?</p>:<div className="table-responsive"><table className="table"><thead><tr>{['Date / Time','Operator','Action','Record'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>
+    {data.rows.map(r=><tr key={r.id}><td>{new Date(r.created_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}</td><td>{r.operator}</td><td>{r.action}</td><td>{r.entity_id}</td></tr>)}</tbody></table>{!data.rows.length && <p>No matching activity.</p>}</div>}
+    <div className="table-footer"><button disabled={loading||offset===0} onClick={()=>setOffset(offset-50)}>Previous</button><button disabled={loading||!!error||!data.more} onClick={()=>setOffset(offset+50)}>Next</button></div></div>;
 }
