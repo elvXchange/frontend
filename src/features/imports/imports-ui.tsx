@@ -1,3 +1,4 @@
+import { apiUrl } from '../../shared/api';
 import { useState } from 'react';
 import {
   api,
@@ -81,7 +82,7 @@ export function HistoricalImport({
           />
         </label>
         <div className="workflow-actions wide">
-          <a className="btn btn-light" href="/api/workflow/acr-import/template">
+          <a className="btn btn-light" href={apiUrl('/workflow/acr-import/template')}>
             Download historical ACR template
           </a>
           <button className="btn btn-success" disabled={busy}>
@@ -231,7 +232,7 @@ export function BatchSchedule({ onSaved }: { onSaved: () => Promise<void> }) {
         <div className="workflow-actions wide">
           <a
             className="btn btn-light"
-            href="/api/workflow/grouped-inventory/template"
+            href={apiUrl('/workflow/grouped-inventory/template')}
           >
             Download grouped inventory template
           </a>

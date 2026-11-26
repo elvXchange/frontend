@@ -1,3 +1,4 @@
+import { apiUrl } from '../../shared/api';
 import { VehicleCommercial } from '../workflow/operations-ui';
 import { useEffect, useState } from 'react';
 import {
@@ -286,14 +287,14 @@ export function FilePanel({
           f.mime.startsWith('image/') ? (
             <a
               key={f.id}
-              href={`/api/files/${f.id}`}
+              href={apiUrl(`/files/${f.id}`)}
               target="_blank"
               rel="noreferrer"
             >
-              <img src={`/api/files/${f.id}`} alt={f.name} />
+              <img crossOrigin="use-credentials" src={apiUrl(`/files/${f.id}`)} alt={f.name} />
             </a>
           ) : (
-            <a key={f.id} className="file-link" href={`/api/files/${f.id}`}>
+            <a key={f.id} className="file-link" href={apiUrl(`/files/${f.id}`)}>
               ↓ {f.name}
             </a>
           ),
@@ -1052,7 +1053,7 @@ export function VehicleDetails({
           <div className="workflow-actions">
             <a
               className="btn btn-light btn-sm"
-              href={`/api/workflow/lots/${lot.id}/pdf?kind=vehicle`}
+              href={apiUrl(`/workflow/lots/${lot.id}/pdf?kind=vehicle`)}
               target="_blank"
               rel="noreferrer"
             >
@@ -1060,7 +1061,7 @@ export function VehicleDetails({
             </a>
             <a
               className="btn btn-light btn-sm"
-              href={`/api/workflow/lots/${lot.id}/images.zip`}
+              href={apiUrl(`/workflow/lots/${lot.id}/images.zip`)}
             >
               Download all images
             </a>
@@ -1365,7 +1366,7 @@ export function AddVehicles({
       >
         <div className="upload-box">
           <div>
-            <a href="/api/inventory/template" download>
+            <a href={apiUrl('/inventory/template')} download>
               Download Inventory Template
             </a>
             <p>

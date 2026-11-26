@@ -1,3 +1,9 @@
+const configuredUrl = import.meta.env?.VITE_API_BASE_URL?.trim();
+export const apiBaseUrl = configuredUrl ? new URL(configuredUrl).origin : '';
+export function apiUrl(path: string) {
+  return `${apiBaseUrl}/api${path}`;
+}
+
 let renewal: Promise<unknown> | undefined;
 export function renewSession() {
   renewal ??= api('/auth/refresh', 'POST').finally(() => {
@@ -15,9 +21,9 @@ export async function api<T = unknown>(
   const controller = new AbortController(),
     timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(`/api${path}`, {
+    const response = await fetch(apiUrl(path), {
       method,
-      credentials: 'same-origin',
+      credentials: 'include',
       headers: body && !form ? { 'Content-Type': 'application/json' } : {},
       body: body ? (form ? body : JSON.stringify(body)) : undefined,
       signal: controller.signal,

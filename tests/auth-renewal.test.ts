@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { api } from '../src/shared/api';
+test('API calls default to relative URLs and include session cookies', async (t) => {
+  const request = t.mock.method(globalThis, 'fetch', async () => Response.json({}));
+  await api('/auctions');
+  assert.equal(request.mock.calls[0].arguments[0], '/api/auctions');
+  assert.equal(request.mock.calls[0].arguments[1]?.credentials, 'include');
+});
 test('concurrent middleware rejections share refresh and each retry once', async (t) => {
   let refreshes = 0,
     requests = 0;

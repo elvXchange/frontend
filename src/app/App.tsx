@@ -1,3 +1,4 @@
+import { apiBaseUrl, apiUrl } from '../shared/api';
 import { scheduleAuction } from '../features/auctions/schedule-auction';
 import {
   VehicleCommercial,
@@ -235,7 +236,7 @@ export default function App() {
           : null;
       if (
         !(link instanceof HTMLAnchorElement) ||
-        link.origin !== location.origin ||
+        link.origin !== (apiBaseUrl || location.origin) ||
         !link.pathname.startsWith('/api/')
       )
         return;
@@ -259,7 +260,7 @@ export default function App() {
         });
     };
     document.addEventListener('click', openAttachment);
-    const socket = io({ withCredentials: true });
+    const socket = io(apiBaseUrl || undefined, { withCredentials: true });
     let timer: ReturnType<typeof setTimeout> | undefined;
     const onChange = () => {
       clearTimeout(timer);
@@ -1772,10 +1773,10 @@ export default function App() {
                     <a
                       className="btn btn-outline-success btn-sm"
                       href={
-                        '/api/users/export?status=' +
+                        apiUrl('/users/export?status=' +
                         userStatus +
                         '&search=' +
-                        encodeURIComponent(query)
+                        encodeURIComponent(query))
                       }
                     >
                       ↓ Download Users
